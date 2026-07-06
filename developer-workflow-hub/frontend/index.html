@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Workflow Automation Hub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🚀 Developer Workflow Automation Hub</h1>
+                <p>Automate repetitive developer activities using AI</p>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navbar">
+            <button class="nav-btn active" onclick="switchTab('overview')">Overview</button>
+            <button class="nav-btn" onclick="switchTab('repository')">Repository Analysis</button>
+            <button class="nav-btn" onclick="switchTab('documentation')">Documentation</button>
+            <button class="nav-btn" onclick="switchTab('code-quality')">Code Quality</button>
+            <button class="nav-btn" onclick="switchTab('workflow')">Full Workflow</button>
+            <button class="nav-btn" onclick="switchTab('reports')">Reports</button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Overview Tab -->
+            <section id="overview-tab" class="tab-content active">
+                <div class="card">
+                    <h2>Welcome to Developer Workflow Automation Hub</h2>
+                    <p>The goal of our application is to automate repetitive developer activities using AI. Every task follows the same workflow:</p>
+                    <ol class="workflow-steps">
+                        <li><strong>Frontend Invocation:</strong> Submit request via web interface</li>
+                        <li><strong>REST API:</strong> Request routed to backend</li>
+                        <li><strong>Task Execution:</strong> Backend executes requested task</li>
+                        <li><strong>Report Generation:</strong> Creates comprehensive report</li>
+                        <li><strong>Local Storage:</strong> Saves results locally</li>
+                        <li><strong>Display Results:</strong> Shows output to user</li>
+                    </ol>
+                </div>
+
+                <div class="cards-grid">
+                    <div class="feature-card">
+                        <h3>📊 Repository Analysis</h3>
+                        <p>Analyze GitHub repositories and extract detailed statistics, languages, and metadata</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📝 Documentation Generator</h3>
+                        <p>Automatically generate project documentation, features list, and setup instructions</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔍 Code Quality Analysis</h3>
+                        <p>Analyze code for quality metrics, design issues, and improvement suggestions</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>⚙️ Workflow Orchestration</h3>
+                        <p>Execute multiple tasks in sequence with results flowing between tasks</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Repository Analysis Tab -->
+            <section id="repository-tab" class="tab-content">
+                <div class="card">
+                    <h2>Repository Analysis</h2>
+                    <p>Fetch detailed information about any GitHub repository</p>
+                    
+                    <div class="form-group">
+                        <label for="repo-url">GitHub Repository URL:</label>
+                        <input type="text" id="repo-url" placeholder="https://github.com/owner/repository" class="input-field">
+                    </div>
+
+                    <button onclick="analyzeRepository()" class="btn btn-primary">Analyze Repository</button>
+
+                    <div id="repo-loading" class="loading-spinner" style="display: none;"></div>
+                    <div id="repo-result" class="result-section"></div>
+                </div>
+            </section>
+
+            <!-- Documentation Tab -->
+            <section id="documentation-tab" class="tab-content">
+                <div class="card">
+                    <h2>Documentation Generator</h2>
+                    <p>Generate comprehensive project documentation from repository data</p>
+                    
+                    <div class="form-group">
+                        <label for="doc-repo-url">GitHub Repository URL:</label>
+                        <input type="text" id="doc-repo-url" placeholder="https://github.com/owner/repository" class="input-field">
+                    </div>
+
+                    <button onclick="generateDocumentation()" class="btn btn-primary">Generate Documentation</button>
+
+                    <div id="doc-loading" class="loading-spinner" style="display: none;"></div>
+                    <div id="doc-result" class="result-section"></div>
+                </div>
+            </section>
+
+            <!-- Code Quality Tab -->
+            <section id="code-quality-tab" class="tab-content">
+                <div class="card">
+                    <h2>Code Quality Analysis</h2>
+                    <p>Upload a Java or code file to analyze quality metrics</p>
+                    
+                    <div class="form-group">
+                        <label for="code-file">Upload Java/Code File:</label>
+                        <input type="file" id="code-file" accept=".java,.py,.js,.ts,.go,.rs" class="input-field">
+                    </div>
+
+                    <button onclick="analyzeCodeQuality()" class="btn btn-primary">Analyze Code</button>
+
+                    <div id="quality-loading" class="loading-spinner" style="display: none;"></div>
+                    <div id="quality-result" class="result-section"></div>
+                </div>
+            </section>
+
+            <!-- Workflow Tab -->
+            <section id="workflow-tab" class="tab-content">
+                <div class="card">
+                    <h2>Full Workflow Execution</h2>
+                    <p>Execute complete workflow: Repository Analysis → Documentation Generation</p>
+                    
+                    <div class="form-group">
+                        <label for="workflow-repo-url">GitHub Repository URL:</label>
+                        <input type="text" id="workflow-repo-url" placeholder="https://github.com/owner/repository" class="input-field">
+                    </div>
+
+                    <button onclick="executeWorkflow()" class="btn btn-primary">Execute Workflow</button>
+
+                    <div id="workflow-loading" class="loading-spinner" style="display: none;"></div>
+                    <div id="workflow-result" class="result-section"></div>
+                </div>
+            </section>
+
+            <!-- Reports Tab -->
+            <section id="reports-tab" class="tab-content">
+                <div class="card">
+                    <h2>Generated Reports</h2>
+                    <p>Download all generated reports from executed tasks</p>
+                    
+                    <button onclick="loadReports()" class="btn btn-primary">Refresh Reports</button>
+
+                    <div id="reports-loading" class="loading-spinner" style="display: none;"></div>
+                    <div id="reports-list" class="reports-container"></div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2024 Developer Workflow Automation Hub | Powered by AI & Clean Architecture</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
