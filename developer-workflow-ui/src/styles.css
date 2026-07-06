@@ -1,0 +1,10 @@
+body {
+  margin: 0;
+  background: #f8fafc;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+button,
+input {
+  font: inherit;
+}

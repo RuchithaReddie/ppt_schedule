@@ -1,0 +1,24 @@
+@if (result) {
+	<section class="report-panel" aria-label="Task result">
+		<h2>{{ result.taskName }}</h2>
+
+		<dl>
+			<div>
+				<dt>Status</dt>
+				<dd>{{ result.status }}</dd>
+			</div>
+			<div>
+				<dt>Summary</dt>
+				<dd>{{ result.summary }}</dd>
+			</div>
+			<div>
+				<dt>Generated File</dt>
+				<dd>{{ result.reportFileName }}</dd>
+			</div>
+			<div>
+				<dt>Generated Time</dt>
+				<dd>{{ result.generatedAt | date: 'yyyy-MM-dd HH:mm' }}</dd>
+			</div>
+		</dl>
+	</section>
+}

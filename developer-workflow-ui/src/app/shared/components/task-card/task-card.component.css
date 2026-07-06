@@ -1,0 +1,37 @@
+.task-card {
+  display: grid;
+  gap: 12px;
+  min-height: 180px;
+  padding: 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.task-card h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.task-card p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.task-card button {
+  align-self: end;
+  justify-self: start;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: #1f2937;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.task-card button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
