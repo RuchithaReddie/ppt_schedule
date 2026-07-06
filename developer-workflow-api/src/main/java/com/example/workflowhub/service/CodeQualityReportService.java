@@ -1,8 +1,11 @@
-package com.example.workflowhub.task;
+package com.example.workflowhub.service;
 
 import com.example.workflowhub.dto.TaskRequest;
 import com.example.workflowhub.model.TaskResult;
 import com.example.workflowhub.model.TaskType;
+import com.example.workflowhub.task.AnalyzedProjectFile;
+import com.example.workflowhub.task.ProjectStructure;
+import com.example.workflowhub.task.ProjectStructureAnalyzer;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,10 +17,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
-public class CodeQualityReportTask implements WorkflowTask {
+@Service
+public class CodeQualityReportService implements TaskService {
 
     private static final long LARGE_FILE_THRESHOLD_BYTES = 100 * 1024;
     private static final int LONG_FILE_NAME_LIMIT = 40;
@@ -33,7 +36,7 @@ public class CodeQualityReportTask implements WorkflowTask {
 
     private final ProjectStructureAnalyzer projectStructureAnalyzer;
 
-    public CodeQualityReportTask(ProjectStructureAnalyzer projectStructureAnalyzer) {
+    public CodeQualityReportService(ProjectStructureAnalyzer projectStructureAnalyzer) {
         this.projectStructureAnalyzer = projectStructureAnalyzer;
     }
 
@@ -84,30 +87,26 @@ public class CodeQualityReportTask implements WorkflowTask {
     private void addFileNameIssues(List<AnalyzedProjectFile> files, List<String> issues) {
         for (AnalyzedProjectFile file : files) {
             String fileName = file.relativePath().getFileName().toString();
-            if (fileName.contains(" ")) {
-                issues.add("File name contains spaces: " + file.relativePath());
-            }
-            if (fileName.length() > LONG_FILE_NAME_LIMIT) {
-                issues.add("File name is longer than " + LONG_FILE_NAME_LIMIT + " characters: " + file.relativePath());
-            }
-            if (hasMixedCase(fileName)) {
-                issues.add("File name uses mixed uppercase/lowercase style: " + file.relativePath());
-            }
+            addIf(issues, fileName.contains(" "), "File name contains spaces: " + file.relativePath());
+            addIf(issues, fileName.length() > LONG_FILE_NAME_LIMIT,
+                    "File name is longer than " + LONG_FILE_NAME_LIMIT + " characters: " + file.relativePath());
+            addIf(issues, hasMixedCase(fileName),
+                    "File name uses mixed uppercase/lowercase style: " + file.relativePath());
         }
     }
 
     private void addFolderNameIssues(List<Path> folders, List<String> issues) {
         for (Path folder : folders) {
             String folderName = folder.getFileName().toString();
-            if (folderName.contains(" ")) {
-                issues.add("Folder name contains spaces: " + folder);
-            }
-            if (hasMixedSeparators(folderName)) {
-                issues.add("Folder name mixes separators: " + folder);
-            }
-            if (hasMixedCase(folderName)) {
-                issues.add("Folder name uses mixed uppercase/lowercase style: " + folder);
-            }
+            addIf(issues, folderName.contains(" "), "Folder name contains spaces: " + folder);
+            addIf(issues, hasMixedSeparators(folderName), "Folder name mixes separators: " + folder);
+            addIf(issues, hasMixedCase(folderName), "Folder name uses mixed uppercase/lowercase style: " + folder);
+        }
+    }
+
+    private void addIf(List<String> issues, boolean condition, String message) {
+        if (condition) {
+            issues.add(message);
         }
     }
 
@@ -143,13 +142,18 @@ public class CodeQualityReportTask implements WorkflowTask {
             int fileFixmeCount = countOccurrences(content, "FIXME");
             todoCount += fileTodoCount;
             fixmeCount += fileFixmeCount;
-
-            if (fileTodoCount > 0 || fileFixmeCount > 0) {
-                filesWithMatches.add(file.relativePath() + " (TODO: " + fileTodoCount + ", FIXME: " + fileFixmeCount + ")");
-            }
+            addTodoFixmeMatch(filesWithMatches, file, fileTodoCount, fileFixmeCount);
         }
 
         return new TodoFixmeReview(todoCount, fixmeCount, filesWithMatches);
+    }
+
+    private void addTodoFixmeMatch(List<String> filesWithMatches, AnalyzedProjectFile file, int todoCount,
+            int fixmeCount) {
+        if (todoCount == 0 && fixmeCount == 0) {
+            return;
+        }
+        filesWithMatches.add(file.relativePath() + " (TODO: " + todoCount + ", FIXME: " + fixmeCount + ")");
     }
 
     private List<AnalyzedProjectFile> findLargeFiles(List<AnalyzedProjectFile> files) {
@@ -225,24 +229,16 @@ public class CodeQualityReportTask implements WorkflowTask {
 
     private void appendImprovementSuggestions(StringBuilder report, QualityReview review) {
         report.append("# Improvement Suggestions\n\n");
-        List<String> suggestions = buildSuggestions(review);
-        suggestions.forEach(suggestion -> report.append("- ").append(suggestion).append("\n"));
+        buildSuggestions(review).forEach(suggestion -> report.append("- ").append(suggestion).append("\n"));
     }
 
     private List<String> buildSuggestions(QualityReview review) {
         List<String> suggestions = new ArrayList<>();
-        if (review.todoFixmeReview().todoCount() > 0) {
-            suggestions.add("Remove completed TODO comments.");
-        }
-        if (review.todoFixmeReview().fixmeCount() > 0) {
-            suggestions.add("Review FIXME comments and convert them into tracked tasks.");
-        }
-        if (!review.largeFiles().isEmpty()) {
-            suggestions.add("Split very large files into smaller focused files.");
-        }
-        if (!review.namingIssues().isEmpty()) {
-            suggestions.add("Keep naming conventions consistent.");
-        }
+        addIf(suggestions, review.todoFixmeReview().todoCount() > 0, "Remove completed TODO comments.");
+        addIf(suggestions, review.todoFixmeReview().fixmeCount() > 0,
+                "Review FIXME comments and convert them into tracked tasks.");
+        addIf(suggestions, !review.largeFiles().isEmpty(), "Split very large files into smaller focused files.");
+        addIf(suggestions, !review.namingIssues().isEmpty(), "Keep naming conventions consistent.");
         suggestions.add("Remove unused files.");
         suggestions.add("Maintain documentation.");
         return suggestions;

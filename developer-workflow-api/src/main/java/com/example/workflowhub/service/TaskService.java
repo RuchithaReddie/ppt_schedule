@@ -1,13 +1,10 @@
-package com.example.workflowhub.task;
+package com.example.workflowhub.service;
 
 import com.example.workflowhub.dto.TaskRequest;
 import com.example.workflowhub.model.TaskResult;
 import com.example.workflowhub.model.TaskType;
 
-/**
- * Common contract for every workflow automation task.
- */
-public interface WorkflowTask {
+public interface TaskService {
 
     TaskType getTaskType();
 

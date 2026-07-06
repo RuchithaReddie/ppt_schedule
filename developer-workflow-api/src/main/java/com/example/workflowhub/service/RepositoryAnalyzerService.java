@@ -1,19 +1,21 @@
-package com.example.workflowhub.task;
+package com.example.workflowhub.service;
 
 import com.example.workflowhub.dto.TaskRequest;
 import com.example.workflowhub.model.TaskResult;
 import com.example.workflowhub.model.TaskType;
+import com.example.workflowhub.task.ProjectStructure;
+import com.example.workflowhub.task.ProjectStructureAnalyzer;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
-public class RepositoryAnalyzerTask implements WorkflowTask {
+@Service
+public class RepositoryAnalyzerService implements TaskService {
 
     private final ProjectStructureAnalyzer projectStructureAnalyzer;
 
-    public RepositoryAnalyzerTask(ProjectStructureAnalyzer projectStructureAnalyzer) {
+    public RepositoryAnalyzerService(ProjectStructureAnalyzer projectStructureAnalyzer) {
         this.projectStructureAnalyzer = projectStructureAnalyzer;
     }
 

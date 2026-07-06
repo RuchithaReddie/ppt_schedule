@@ -1,4 +1,4 @@
 export interface TaskRequest {
   taskType: string;
-  projectPath?: string;
+  projectPath: string;
 }

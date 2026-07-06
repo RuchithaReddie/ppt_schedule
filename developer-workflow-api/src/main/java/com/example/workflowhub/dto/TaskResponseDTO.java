@@ -2,16 +2,16 @@ package com.example.workflowhub.dto;
 
 import com.example.workflowhub.model.TaskType;
 
-public class TaskInfoResponse {
+public class TaskResponseDTO {
 
     private TaskType taskType;
     private String taskName;
     private String description;
 
-    public TaskInfoResponse() {
+    public TaskResponseDTO() {
     }
 
-    public TaskInfoResponse(TaskType taskType, String taskName, String description) {
+    public TaskResponseDTO(TaskType taskType, String taskName, String description) {
         this.taskType = taskType;
         this.taskName = taskName;
         this.description = description;

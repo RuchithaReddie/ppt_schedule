@@ -1,80 +1,81 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Task } from '../../core/models/task.model';
 import { TaskResult } from '../../core/models/task-result.model';
 import { TaskApiService } from '../../core/services/task-api.service';
-import { LoadingIndicatorComponent } from '../../shared/components/loading-indicator/loading-indicator.component';
 import { ReportViewerComponent } from '../report-viewer/report-viewer.component';
+import { LoadingIndicatorComponent } from '../../shared/components/loading-indicator/loading-indicator.component';
 import { TaskCardComponent } from '../../shared/components/task-card/task-card.component';
 
 @Component({
   selector: 'app-task-library',
   standalone: true,
   imports: [FormsModule, LoadingIndicatorComponent, ReportViewerComponent, TaskCardComponent],
-  templateUrl: './task-library.component.html',
-  styleUrl: './task-library.component.css'
+  templateUrl: './task-library.component.html'
 })
 export class TaskLibraryComponent implements OnInit {
+  private readonly taskApiService = inject(TaskApiService);
+
   tasks: Task[] = [];
   projectPath = '';
+  latestProjectPath = '';
   latestResult?: TaskResult;
   errorMessage = '';
   isLoading = false;
-
-  constructor(private readonly taskApiService: TaskApiService) {
-  }
 
   ngOnInit(): void {
     this.loadTasks();
   }
 
   runTask(task: Task): void {
-    this.clearMessages();
-    this.isLoading = true;
+    // Copilot: simplified UI binding logic so task execution is orchestrated in one Angular container.
+    // Flow step: user click becomes a TaskApiService request, then ReportViewer receives the result.
+    this.beginRequest();
+    this.latestProjectPath = this.projectPath.trim();
 
-    this.taskApiService.executeTask({
-      taskType: task.taskType,
-      projectPath: this.projectPath.trim()
-    }).subscribe({
-      next: (result) => this.handleTaskSuccess(result),
-      error: (error: HttpErrorResponse) => this.handleTaskError(error)
+    this.taskApiService.executeTask({ taskType: task.taskType, projectPath: this.latestProjectPath }).subscribe({
+      next: (result) => this.showResult(result),
+      error: (error: unknown) => this.showError(error)
     });
   }
 
   private loadTasks(): void {
-    this.isLoading = true;
+    this.beginRequest();
+
     this.taskApiService.getTasks().subscribe({
       next: (tasks) => {
         this.tasks = tasks;
         this.isLoading = false;
       },
-      error: (error: HttpErrorResponse) => this.handleTaskError(error)
+      error: (error: unknown) => this.showError(error)
     });
   }
 
-  private handleTaskSuccess(result: TaskResult): void {
-    this.latestResult = result;
-    this.isLoading = false;
-  }
-
-  private handleTaskError(error: HttpErrorResponse): void {
-    this.errorMessage = this.extractErrorMessage(error);
-    this.isLoading = false;
-  }
-
-  private clearMessages(): void {
+  private beginRequest(): void {
+    this.isLoading = true;
     this.errorMessage = '';
     this.latestResult = undefined;
   }
 
-  private extractErrorMessage(error: HttpErrorResponse): string {
-    if (typeof error.error === 'string' && error.error.trim()) {
-      return error.error;
+  private showResult(result: TaskResult): void {
+    this.latestResult = result;
+    this.isLoading = false;
+  }
+
+  private showError(error: unknown): void {
+    this.errorMessage = this.getMessage(error);
+    this.isLoading = false;
+  }
+
+  private getMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
     }
-    if (error.error?.error) {
-      return error.error.error;
+
+    if (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string') {
+      return error.message;
     }
+
     return 'Unable to complete the request. Please try again.';
   }
 }

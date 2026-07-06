@@ -2,45 +2,54 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "backend-api-validation",
+			"label": "frontend-clean-and-install-safe",
 			"type": "shell",
-			"command": "$projectPath = 'C:\\Users\\rreddy\\Desktop\\ppt_schedule'; $tasks = Invoke-RestMethod -Uri 'http://localhost:8080/api/tasks' -Method Get; $tasks | ConvertTo-Json -Depth 5; foreach ($taskType in @('REPOSITORY_ANALYZER','DOCUMENTATION_GENERATOR','CODE_QUALITY_REPORT')) { $body = @{ taskType = $taskType; projectPath = $projectPath } | ConvertTo-Json; $response = Invoke-RestMethod -Uri 'http://localhost:8080/api/tasks/execute' -Method Post -ContentType 'application/json' -Body $body; $response | ConvertTo-Json -Depth 5 }",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [],
-			"group": "test"
-		},
-		{
-			"label": "frontend-npm-registry-check",
-			"type": "shell",
-			"command": "Set-Location developer-workflow-ui; npm.cmd ping --registry=https://registry.npmjs.org/; npm.cmd view @angular/core version --registry=https://registry.npmjs.org/",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [],
-			"group": "test"
-		},
-		{
-			"label": "frontend-angular-cli-check",
-			"type": "shell",
-			"command": "Set-Location developer-workflow-ui; ng version; npx.cmd -y @angular/cli@18.2.14 version",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [],
-			"group": "test"
-		},
-		{
-			"label": "frontend-node-npm-check",
-			"type": "shell",
-			"command": "Set-Location developer-workflow-ui; node -v; npm.cmd -v; npm.cmd config get registry",
+			"command": "Set-Location developer-workflow-ui; npm.cmd run clean:deps; npm.cmd run install:safe",
 			"args": [],
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
 		},
 		{
-			"label": "frontend-npm-install-verbose",
+			"label": "npm-registry-direct-check",
 			"type": "shell",
-			"command": "Set-Location developer-workflow-ui; npm.cmd install --verbose",
+			"command": "Set-Location developer-workflow-ui; try { $r = Invoke-WebRequest 'https://registry.npmjs.org/@angular%2fanimations' -UseBasicParsing -TimeoutSec 30; Write-Output \"direct-status=$($r.StatusCode)\" } catch { Write-Output \"direct-error=$($_.Exception.Message)\" }; npm.cmd ping --registry=https://registry.npmjs.org/; npm.cmd view @angular/animations version --registry=https://registry.npmjs.org/",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "node-https-registry-check",
+			"type": "shell",
+			"command": "Set-Location developer-workflow-ui; node -e \"require('https').get('https://registry.npmjs.org/@angular%2fanimations', r => { console.log('node-status=' + r.statusCode); r.resume(); }).on('error', e => { console.error('node-error=' + e.code + ':' + e.message); process.exit(1); })\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "node-https-registry-check-cmd",
+			"type": "shell",
+			"command": "Set-Location developer-workflow-ui; cmd.exe /c \"node -e \\\"require('https').get('https://registry.npmjs.org/@angular%2fanimations', r => { console.log('node-status=' + r.statusCode); r.resume(); }).on('error', e => { console.error('node-error=' + e.code + ':' + e.message); process.exit(1); })\\\"\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "node-https-ipv4-registry-check",
+			"type": "shell",
+			"command": "Set-Location developer-workflow-ui; cmd.exe /c \"node -e \\\"const https=require('https'); const agent=new https.Agent({family:4}); https.get('https://registry.npmjs.org/@angular%2fanimations', {agent}, r => { console.log('node-ipv4-status=' + r.statusCode); r.resume(); }).on('error', e => { console.error('node-ipv4-error=' + e.code + ':' + e.message); process.exit(1); })\\\"\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "angular-frontend-install",
+			"type": "shell",
+			"command": "Set-Location developer-workflow-ui; npm.cmd run install:safe",
 			"args": [],
 			"isBackground": false,
 			"problemMatcher": [],

@@ -1,9 +1,5 @@
-@if (task) {
-	<article class="task-card">
-		<h2>{{ task.taskName }}</h2>
-		<p>{{ task.description }}</p>
-		<button type="button" [disabled]="disabled" (click)="onRunTask()">
-			Run Task
-		</button>
-	</article>
-}
+<article class="task-card">
+  <h2>{{ task.taskName }}</h2>
+  <p>{{ description }}</p>
+  <button type="button" [disabled]="disabled" (click)="runTask.emit(task)">Run Task</button>
+</article>

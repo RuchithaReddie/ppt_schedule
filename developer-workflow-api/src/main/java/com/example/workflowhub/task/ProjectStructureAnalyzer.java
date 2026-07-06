@@ -152,14 +152,3 @@ public class ProjectStructureAnalyzer {
     }
 }
 
-record ProjectStructure(Path projectPath, long totalFolders, long totalFiles, Map<String, Long> fileTypeCounts,
-        List<String> detectedTechnologies, List<Path> topLevelFolders, List<AnalyzedProjectFile> largestFiles,
-    List<AnalyzedProjectFile> files, List<Path> folders) {
-
-    String projectName() {
-        return projectPath.getFileName().toString();
-    }
-}
-
-record AnalyzedProjectFile(Path relativePath, long sizeInBytes) {
-}

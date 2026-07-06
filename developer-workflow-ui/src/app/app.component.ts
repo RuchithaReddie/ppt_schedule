@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { TaskLibraryComponent } from './features/task-library/task-library.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  imports: [TaskLibraryComponent],
+  templateUrl: './app.component.html'
 })
 export class AppComponent {
 }

@@ -1,14 +1,17 @@
-package com.example.workflowhub.task;
+package com.example.workflowhub.service;
 
 import com.example.workflowhub.dto.TaskRequest;
 import com.example.workflowhub.model.TaskResult;
 import com.example.workflowhub.model.TaskType;
+import com.example.workflowhub.task.AnalyzedProjectFile;
+import com.example.workflowhub.task.ProjectStructure;
+import com.example.workflowhub.task.ProjectStructureAnalyzer;
 import java.nio.file.Path;
 import java.util.List;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
-public class DocumentationGeneratorTask implements WorkflowTask {
+@Service
+public class DocumentationGeneratorService implements TaskService {
 
     private static final List<String> IMPORTANT_FILE_NAMES = List.of(
             "README.md",
@@ -31,7 +34,7 @@ public class DocumentationGeneratorTask implements WorkflowTask {
 
     private final ProjectStructureAnalyzer projectStructureAnalyzer;
 
-    public DocumentationGeneratorTask(ProjectStructureAnalyzer projectStructureAnalyzer) {
+    public DocumentationGeneratorService(ProjectStructureAnalyzer projectStructureAnalyzer) {
         this.projectStructureAnalyzer = projectStructureAnalyzer;
     }
 

@@ -1,8 +1,6 @@
-package com.example.workflowhub.controller;
-
-import com.example.workflowhub.dto.TaskInfoResponse;
 import com.example.workflowhub.dto.TaskRequest;
-import com.example.workflowhub.dto.TaskResponse;
+import com.example.workflowhub.dto.TaskResponseDTO;
+import com.example.workflowhub.dto.TaskResultDTO;
 import com.example.workflowhub.service.TaskExecutionService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,12 +22,14 @@ public class TaskController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TaskInfoResponse>> getAvailableTasks() {
+    public ResponseEntity<List<TaskResponseDTO>> getAvailableTasks() {
+        // Copilot: controller stays HTTP-only; orchestration is delegated to the service layer.
         return ResponseEntity.ok(taskExecutionService.getAvailableTasks());
     }
 
     @PostMapping("/execute")
-    public ResponseEntity<TaskResponse> executeTask(@Valid @RequestBody TaskRequest request) {
+    public ResponseEntity<TaskResultDTO> executeTask(@Valid @RequestBody TaskRequest request) {
+        // Flow step: API request enters here, then moves to the use-case service boundary.
         return ResponseEntity.ok(taskExecutionService.executeTask(request));
     }
 }

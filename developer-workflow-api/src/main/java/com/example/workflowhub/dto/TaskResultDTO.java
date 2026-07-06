@@ -3,7 +3,7 @@ package com.example.workflowhub.dto;
 import com.example.workflowhub.model.TaskType;
 import java.time.LocalDateTime;
 
-public class TaskResponse {
+public class TaskResultDTO {
 
     private TaskType taskType;
     private String taskName;
@@ -12,10 +12,10 @@ public class TaskResponse {
     private String reportFileName;
     private LocalDateTime generatedAt;
 
-    public TaskResponse() {
+    public TaskResultDTO() {
     }
 
-    public TaskResponse(TaskType taskType, String taskName, String status, String summary, String reportFileName,
+    public TaskResultDTO(TaskType taskType, String taskName, String status, String summary, String reportFileName,
             LocalDateTime generatedAt) {
         this.taskType = taskType;
         this.taskName = taskName;

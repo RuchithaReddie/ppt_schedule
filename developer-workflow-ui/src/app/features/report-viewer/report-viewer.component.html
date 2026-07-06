@@ -1,24 +1,51 @@
 @if (result) {
-	<section class="report-panel" aria-label="Task result">
-		<h2>{{ result.taskName }}</h2>
+  <section class="report-panel" [class.code-quality-panel]="isCodeQualityReport" aria-label="Task result">
+    <div class="result-card-header">
+      <div>
+        <p class="result-kicker">Workflow Result</p>
+        <h2>{{ result.taskName }}</h2>
+        <p class="result-subtitle">{{ result.summary }}</p>
+      </div>
+      <span class="status-pill" [class.success]="statusClass === 'success'" [class.failure]="statusClass === 'failure'">
+        <span class="status-dot" aria-hidden="true"></span>
+        {{ result.status }}
+      </span>
+    </div>
 
-		<dl>
-			<div>
-				<dt>Status</dt>
-				<dd>{{ result.status }}</dd>
-			</div>
-			<div>
-				<dt>Summary</dt>
-				<dd>{{ result.summary }}</dd>
-			</div>
-			<div>
-				<dt>Generated File</dt>
-				<dd>{{ result.reportFileName }}</dd>
-			</div>
-			<div>
-				<dt>Generated Time</dt>
-				<dd>{{ result.generatedAt | date: 'yyyy-MM-dd HH:mm' }}</dd>
-			</div>
-		</dl>
-	</section>
+    <div class="project-path-card">
+      <span>Project Path</span>
+      <strong>{{ projectPath || 'Not provided' }}</strong>
+    </div>
+
+    @if (isCodeQualityReport) {
+      <section class="metrics-grid" aria-label="Code quality metrics">
+        <article class="metric-card todo-metric">
+          <span class="metric-icon" aria-hidden="true">🟡</span>
+          <div>
+            <span class="metric-label">TODO Count</span>
+            <strong>{{ todoCount }}</strong>
+          </div>
+        </article>
+        <article class="metric-card fixme-metric">
+          <span class="metric-icon" aria-hidden="true">🔴</span>
+          <div>
+            <span class="metric-label">FIXME Count</span>
+            <strong>{{ fixmeCount }}</strong>
+          </div>
+        </article>
+        <article class="metric-card file-metric">
+          <span class="metric-icon" aria-hidden="true">📄</span>
+          <div>
+            <span class="metric-label">Large Files</span>
+            <strong>{{ largeFilesCount }}</strong>
+          </div>
+        </article>
+      </section>
+    }
+
+    <div class="result-meta-row">
+      <span class="file-badge"><span aria-hidden="true">📄</span>{{ result.reportFileName }}</span>
+      <span class="timestamp"><span aria-hidden="true">⏱</span>{{ result.generatedAt | date:'MMM d, y, h:mm a' }}</span>
+    </div>
+  </section>
 }

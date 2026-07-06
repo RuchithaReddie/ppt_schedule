@@ -1,38 +1,28 @@
-<main class="page-shell">
-	<section class="page-header">
-		<h1>Developer Workflow Automation Hub</h1>
-	</section>
+<section class="project-input-section">
+  <label for="projectPath">Project Folder</label>
+  <input
+    id="projectPath"
+    name="projectPath"
+    type="text"
+    [(ngModel)]="projectPath"
+    placeholder="Enter local project path"
+    autocomplete="off"
+  >
+  <p class="input-example">Example: C:\Users\Ruchitha\Desktop\SampleProject</p>
+</section>
 
-	<section class="project-input-section">
-		<label for="projectPath">Project Folder</label>
-		<input
-			id="projectPath"
-			name="projectPath"
-			type="text"
-			[(ngModel)]="projectPath"
-			placeholder="Enter local project path"
-			autocomplete="off"
-		/>
-		<p class="input-example">Example: C:\Users\Ruchitha\Desktop\SampleProject</p>
-	</section>
+<app-loading-indicator [isLoading]="isLoading"></app-loading-indicator>
 
-	<app-loading-indicator [isLoading]="isLoading" message="Running task..." />
+@if (errorMessage) {
+  <section class="error-panel" role="alert">
+    {{ errorMessage }}
+  </section>
+}
 
-	@if (errorMessage) {
-		<section class="error-panel" role="alert">
-			{{ errorMessage }}
-		</section>
-	}
+<section class="task-grid" aria-label="Available tasks">
+  @for (task of tasks; track task.taskType) {
+    <app-task-card [task]="task" [disabled]="isLoading" (runTask)="runTask($event)"></app-task-card>
+  }
+</section>
 
-	<section class="task-grid" aria-label="Available tasks">
-		@for (task of tasks; track task.taskType) {
-			<app-task-card
-				[task]="task"
-				[disabled]="isLoading"
-				(runTask)="runTask($event)"
-			/>
-		}
-	</section>
-
-	<app-report-viewer [result]="latestResult" />
-</main>
+<app-report-viewer [result]="latestResult" [projectPath]="latestProjectPath"></app-report-viewer>
