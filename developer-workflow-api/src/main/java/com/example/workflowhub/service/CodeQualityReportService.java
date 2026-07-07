@@ -170,6 +170,7 @@ public class CodeQualityReportService implements TaskService {
         appendTodoFixmeReview(report, qualityReview.todoFixmeReview());
         appendLargeFileReview(report, qualityReview.largeFiles());
         appendProjectHealth(report, qualityReview);
+        appendAiPrioritizedInsights(report, projectStructure, qualityReview);
         appendImprovementSuggestions(report, qualityReview);
         return report.toString();
     }
@@ -179,6 +180,7 @@ public class CodeQualityReportService implements TaskService {
         report.append("- Project name: ").append(projectStructure.projectName()).append("\n");
         report.append("- Total source files: ").append(countSourceFiles(projectStructure.files())).append("\n");
         report.append("- Technologies detected: ").append(formatList(projectStructure.detectedTechnologies())).append("\n\n");
+        report.append("- Excluded heavy folders: ").append(formatPathList(projectStructure.excludedFolders(), 8)).append("\n\n");
     }
 
     private void appendNamingReview(StringBuilder report, List<String> namingIssues) {
@@ -217,14 +219,28 @@ public class CodeQualityReportService implements TaskService {
     }
 
     private void appendProjectHealth(StringBuilder report, QualityReview review) {
+        int qualityScore = calculateQualityScore(review);
         report.append("# Project Health\n\n");
+        report.append("- Quality score: ").append(qualityScore).append("/100\n\n");
         report.append(review.namingIssues().isEmpty() ? "Naming conventions are mostly consistent.\n"
                 : review.namingIssues().size() + " naming issue(s) found.\n");
         report.append(review.todoFixmeReview().todoCount()).append(" TODO comments found.\n");
         report.append(review.todoFixmeReview().fixmeCount() == 0 ? "No FIXME comments detected.\n"
                 : review.todoFixmeReview().fixmeCount() + " FIXME comments found.\n");
         report.append(review.largeFiles().size()).append(" files are larger than 100 KB.\n");
-        report.append(buildOverallHealthMessage(review)).append("\n\n");
+        report.append(buildOverallHealthMessage(review, qualityScore)).append("\n\n");
+    }
+
+    private void appendAiPrioritizedInsights(StringBuilder report, ProjectStructure projectStructure, QualityReview review) {
+        List<AiInsight> insights = buildAiInsights(projectStructure, review);
+        report.append("# AI Prioritized Action Plan\n\n");
+        insights.forEach(insight -> {
+            report.append("- [").append(insight.priority()).append("] ")
+                    .append(insight.title()).append(" - ")
+                    .append(insight.rationale()).append(" Action: ")
+                    .append(insight.action()).append("\n");
+        });
+        report.append("\n");
     }
 
     private void appendImprovementSuggestions(StringBuilder report, QualityReview review) {
@@ -245,16 +261,84 @@ public class CodeQualityReportService implements TaskService {
     }
 
     private String buildSummary(ProjectStructure projectStructure, QualityReview review) {
+        int qualityScore = calculateQualityScore(review);
         return "Code quality report generated for " + projectStructure.projectName() + " with "
                 + review.todoFixmeReview().todoCount() + " TODO comments, " + review.todoFixmeReview().fixmeCount()
-                + " FIXME comments, and " + review.largeFiles().size() + " large files.";
+                + " FIXME comments, " + review.largeFiles().size() + " large files, and a quality score of "
+                + qualityScore + "/100.";
     }
 
-    private String buildOverallHealthMessage(QualityReview review) {
-        if (review.namingIssues().isEmpty() && review.todoFixmeReview().fixmeCount() == 0 && review.largeFiles().isEmpty()) {
+    private String buildOverallHealthMessage(QualityReview review, int qualityScore) {
+        if (qualityScore >= 90 && review.todoFixmeReview().fixmeCount() == 0 && review.largeFiles().isEmpty()) {
             return "Overall codebase appears well organized.";
         }
+        if (qualityScore >= 70) {
+            return "Overall codebase is stable, with a few high-impact cleanup opportunities.";
+        }
         return "Overall codebase is usable, with a few cleanup opportunities.";
+    }
+
+    private int calculateQualityScore(QualityReview review) {
+        int namingPenalty = Math.min(25, review.namingIssues().size() * 2);
+        int todoPenalty = Math.min(15, review.todoFixmeReview().todoCount() / 3);
+        int fixmePenalty = Math.min(30, review.todoFixmeReview().fixmeCount() * 5);
+        int largeFilePenalty = Math.min(20, review.largeFiles().size() * 4);
+        int score = 100 - namingPenalty - todoPenalty - fixmePenalty - largeFilePenalty;
+        return Math.max(0, score);
+    }
+
+    private List<AiInsight> buildAiInsights(ProjectStructure projectStructure, QualityReview review) {
+        List<AiInsight> insights = new ArrayList<>();
+
+        if (review.todoFixmeReview().fixmeCount() > 0) {
+            insights.add(new AiInsight(
+                    "High",
+                    "Fix urgent FIXME backlog",
+                    review.todoFixmeReview().fixmeCount() + " FIXME markers indicate known correctness or stability risk.",
+                    "Convert each FIXME into tracked issues and prioritize by runtime impact."));
+        }
+
+        if (!review.largeFiles().isEmpty()) {
+            insights.add(new AiInsight(
+                    "High",
+                    "Refactor oversized files",
+                    review.largeFiles().size() + " files exceed 100 KB and likely hide multiple responsibilities.",
+                    "Split by feature boundary and keep each file focused on one responsibility."));
+        }
+
+        if (!review.namingIssues().isEmpty()) {
+            insights.add(new AiInsight(
+                    "Medium",
+                    "Standardize naming conventions",
+                    review.namingIssues().size() + " naming inconsistencies increase search and onboarding cost.",
+                    "Adopt one naming convention per artifact type and enforce it in pull requests."));
+        }
+
+        if (review.todoFixmeReview().todoCount() > 0) {
+            insights.add(new AiInsight(
+                    "Medium",
+                    "Reduce TODO accumulation",
+                    review.todoFixmeReview().todoCount() + " TODO markers indicate deferred implementation debt.",
+                    "Convert TODO items older than one sprint into backlog tasks or remove them."));
+        }
+
+        if (!projectStructure.excludedFolders().isEmpty()) {
+            insights.add(new AiInsight(
+                    "Low",
+                    "Use targeted deep scan when required",
+                    "Heavy folders are excluded for performance: " + formatPathList(projectStructure.excludedFolders(), 5) + ".",
+                    "Run focused scans on excluded folders only when investigating dependency or build-specific issues."));
+        }
+
+        if (insights.isEmpty()) {
+            insights.add(new AiInsight(
+                    "Low",
+                    "Maintain current quality baseline",
+                    "No major risk indicators were detected.",
+                    "Keep periodic scans in CI and monitor trend changes over time."));
+        }
+
+        return insights;
     }
 
     private long countSourceFiles(List<AnalyzedProjectFile> files) {
@@ -319,10 +403,32 @@ public class CodeQualityReportService implements TaskService {
         return String.join(", ", values);
     }
 
+    private String formatPathList(List<Path> values, int maxItems) {
+        if (values.isEmpty()) {
+            return "none";
+        }
+
+        List<String> rendered = values.stream()
+                .map(Path::toString)
+                .sorted()
+                .distinct()
+                .toList();
+
+        if (rendered.size() <= maxItems) {
+            return String.join(", ", rendered);
+        }
+
+        List<String> preview = rendered.subList(0, maxItems);
+        return String.join(", ", preview) + " (and " + (rendered.size() - maxItems) + " more)";
+    }
+
     private record QualityReview(List<String> namingIssues, TodoFixmeReview todoFixmeReview,
             List<AnalyzedProjectFile> largeFiles) {
     }
 
     private record TodoFixmeReview(int todoCount, int fixmeCount, List<String> filesWithMatches) {
+    }
+
+    private record AiInsight(String priority, String title, String rationale, String action) {
     }
 }

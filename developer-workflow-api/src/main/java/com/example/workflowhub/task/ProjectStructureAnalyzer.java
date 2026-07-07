@@ -3,13 +3,17 @@ package com.example.workflowhub.task;
 import com.example.workflowhub.dto.TaskRequest;
 import com.example.workflowhub.exception.InvalidProjectFolderException;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
@@ -18,18 +22,42 @@ import org.springframework.stereotype.Component;
 public class ProjectStructureAnalyzer {
 
     private static final int LARGEST_FILE_LIMIT = 5;
+    private static final Set<String> EXCLUDED_DIRECTORY_NAMES = Set.of(
+            "node_modules",
+            "target",
+            "build",
+            "dist",
+            "out",
+            ".git",
+            ".idea",
+            ".gradle",
+            ".mvn",
+            "coverage",
+            ".next",
+            ".nuxt",
+            ".pnpm-store",
+            ".yarn",
+            ".npm",
+            "jspm_packages",
+            "vendor",
+            "__pycache__",
+            ".venv",
+            ".angular",
+            "venv",
+            "site-packages");
 
     public ProjectStructure analyze(TaskRequest request, String taskName) {
         Path projectPath = resolveProjectPath(request, taskName);
         List<Path> topLevelFolders = findTopLevelFolders(projectPath);
-        List<AnalyzedProjectFile> files = findFiles(projectPath);
-        List<Path> folders = findFolders(projectPath);
+        ScanResult scanResult = scanProject(projectPath);
+        List<AnalyzedProjectFile> files = scanResult.files();
+        List<Path> folders = scanResult.folders();
         Map<String, Long> fileTypeCounts = countFileTypes(files);
         List<AnalyzedProjectFile> largestFiles = findLargestFiles(files);
         List<String> detectedTechnologies = detectTechnologies(projectPath, files, fileTypeCounts);
 
         return new ProjectStructure(projectPath, folders.size(), files.size(), fileTypeCounts, detectedTechnologies,
-            topLevelFolders, largestFiles, files, folders);
+            topLevelFolders, largestFiles, files, folders, scanResult.excludedFolders());
     }
 
     private Path resolveProjectPath(TaskRequest request, String taskName) {
@@ -47,6 +75,7 @@ public class ProjectStructureAnalyzer {
     private List<Path> findTopLevelFolders(Path projectPath) {
         try (Stream<Path> paths = Files.list(projectPath)) {
             return paths.filter(Files::isDirectory)
+                    .filter(path -> !shouldExcludeDirectory(projectPath.relativize(path)))
                     .sorted(Comparator.comparing(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)))
                     .toList();
         } catch (IOException exception) {
@@ -54,25 +83,52 @@ public class ProjectStructureAnalyzer {
         }
     }
 
-    private List<AnalyzedProjectFile> findFiles(Path projectPath) {
-        try (Stream<Path> paths = Files.walk(projectPath)) {
-            return paths.filter(Files::isRegularFile)
-                    .map(path -> toAnalyzedProjectFile(projectPath, path))
-                    .toList();
+    private ScanResult scanProject(Path projectPath) {
+        List<AnalyzedProjectFile> files = new ArrayList<>();
+        List<Path> folders = new ArrayList<>();
+        List<Path> excludedFolders = new ArrayList<>();
+
+        try {
+            Files.walkFileTree(projectPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) {
+                    if (dir.equals(projectPath)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    Path relativePath = projectPath.relativize(dir);
+                    if (shouldExcludeDirectory(relativePath)) {
+                        excludedFolders.add(relativePath);
+                        return FileVisitResult.SKIP_SUBTREE;
+                    }
+
+                    folders.add(relativePath);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+                    if (attributes.isRegularFile()) {
+                        files.add(toAnalyzedProjectFile(projectPath, file));
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
         } catch (IOException exception) {
             throw new IllegalStateException("Unable to read project files", exception);
         }
+
+        return new ScanResult(files, folders, excludedFolders);
     }
 
-    private List<Path> findFolders(Path projectPath) {
-        try (Stream<Path> paths = Files.walk(projectPath)) {
-            return paths.filter(path -> !path.equals(projectPath))
-                    .filter(Files::isDirectory)
-                    .map(projectPath::relativize)
-                    .toList();
-        } catch (IOException exception) {
-            throw new IllegalStateException("Unable to read project folders", exception);
+    private boolean shouldExcludeDirectory(Path relativePath) {
+        for (Path segment : relativePath) {
+            String directoryName = segment.toString().toLowerCase(Locale.ROOT);
+            if (EXCLUDED_DIRECTORY_NAMES.contains(directoryName)) {
+                return true;
+            }
         }
+        return false;
     }
 
     private AnalyzedProjectFile toAnalyzedProjectFile(Path projectPath, Path filePath) {
@@ -149,6 +205,9 @@ public class ProjectStructureAnalyzer {
             return "[no extension]";
         }
         return fileName.substring(extensionStart).toLowerCase(Locale.ROOT);
+    }
+
+    private record ScanResult(List<AnalyzedProjectFile> files, List<Path> folders, List<Path> excludedFolders) {
     }
 }
 
